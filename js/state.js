@@ -1,7 +1,7 @@
 import { TEAM_SEED } from "./data/team-seed.js";
 import { loadState, saveState } from "./storage.js";
 
-const APP_VERSION = "V2.1.0";
+const APP_VERSION = "V2.1.1";
 const listeners = new Set();
 
 function createId(prefix = "id") {

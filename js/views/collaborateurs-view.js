@@ -58,9 +58,12 @@ function createAddForm(onSubmit) {
   form.innerHTML = `
     <div class="section-title">Ajouter un collaborateur</div>
     <div class="form-grid"></div>
-    <div class="row-between">
+    <div class="row-between action-row">
       <p class="muted">Champs obligatoires: salarie, nom, prenom, MAIA et NNI simplifie.</p>
-      <button type="submit" class="button-link">Creer</button>
+      <div class="action-row">
+        <button type="button" class="button-link" id="cancel-add-form">Annuler</button>
+        <button type="submit" class="button-link button-primary">Creer</button>
+      </div>
     </div>
   `;
 
@@ -132,15 +135,24 @@ export function renderCollaborateursView(container, { state, onSearchChange, onO
   addButtonRow.className = "row-between";
   addButtonRow.innerHTML = `
     <p class="muted">Creation rapide d'un collaborateur.</p>
-    <button type="button" class="button-link" id="toggle-add-form">Ajouter un collaborateur</button>
+    <button type="button" class="button-link button-primary" id="toggle-add-form">Ajouter un collaborateur</button>
   `;
 
   top.append(row, help, addButtonRow);
 
   const addForm = createAddForm(onAddCollaborateur);
   addForm.hidden = true;
-  top.querySelector("#toggle-add-form")?.addEventListener("click", () => {
+  const toggleButton = top.querySelector("#toggle-add-form");
+  toggleButton?.addEventListener("click", () => {
     addForm.hidden = !addForm.hidden;
+    toggleButton.textContent = addForm.hidden ? "Ajouter un collaborateur" : "Masquer le formulaire";
+  });
+  addForm.querySelector("#cancel-add-form")?.addEventListener("click", () => {
+    addForm.hidden = true;
+    addForm.reset();
+    if (toggleButton) {
+      toggleButton.textContent = "Ajouter un collaborateur";
+    }
   });
 
   const tableHost = document.createElement("div");

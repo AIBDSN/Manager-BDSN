@@ -8,13 +8,41 @@ const RAPPEL_STATUTS = ["a_faire", "en_cours", "termine"];
 
 function getUiState(maia) {
   if (!uiStateByMaia.has(maia)) {
-    uiStateByMaia.set(maia, { editIdentity: false });
+    uiStateByMaia.set(maia, {
+      editIdentity: false,
+      showAddFormation: false,
+      showAddEntretien: false,
+      showAddRappel: false
+    });
   }
   return uiStateByMaia.get(maia);
 }
 
 function labelize(value) {
   return (value || "").replaceAll("_", " ");
+}
+
+function getStatusClass(status) {
+  if (status === "realise" || status === "realisee" || status === "termine") {
+    return "status-success";
+  }
+  if (status === "en_retard") {
+    return "status-danger";
+  }
+  if (status === "en_cours" || status === "planifie" || status === "planifiee") {
+    return "status-warning";
+  }
+  return "status-neutral";
+}
+
+function getPriorityClass(priority) {
+  if (priority === "haute") {
+    return "status-danger";
+  }
+  if (priority === "normale") {
+    return "status-warning";
+  }
+  return "status-neutral";
 }
 
 function createInfoRow(label, value) {
@@ -87,7 +115,7 @@ function renderIdentityBlock(collaborateur, isEditing) {
         ${createIdentityField("manager", "Manager", collaborateur.manager)}
       </div>
       <div class="action-row">
-        <button class="button-link" type="submit">Enregistrer</button>
+        <button class="button-link button-primary" type="submit">Enregistrer</button>
         <button class="button-link" type="button" id="cancel-edit">Annuler</button>
       </div>
     </form>
@@ -95,9 +123,15 @@ function renderIdentityBlock(collaborateur, isEditing) {
 }
 
 function renderMaterielSection(collaborateur) {
+  const telephoneOk = collaborateur.materiel?.telephone ? "renseigne" : "manquant";
+  const tabletteOk = collaborateur.materiel?.tablette ? "renseignee" : "manquante";
   return `
     <form class="section-card stack" id="materiel-form">
       <div class="section-title">Materiel</div>
+      <div class="detail-meta">
+        <span class="tag ${telephoneOk === "renseigne" ? "status-success" : "status-danger"}">Telephone: ${telephoneOk}</span>
+        <span class="tag ${tabletteOk === "renseignee" ? "status-success" : "status-danger"}">Tablette: ${tabletteOk}</span>
+      </div>
       <div class="form-grid">
         <label class="field">
           <span class="field-label">Telephone</span>
@@ -117,7 +151,7 @@ function renderMaterielSection(collaborateur) {
         </label>
       </div>
       <div class="action-row">
-        <button class="button-link" type="submit">Enregistrer materiel</button>
+        <button class="button-link button-primary" type="submit">Enregistrer materiel</button>
       </div>
     </form>
   `;
@@ -129,7 +163,7 @@ function renderNotesSection(collaborateur) {
       <div class="section-title">Notes</div>
       <textarea class="notes-input" name="notes" placeholder="Saisir les observations manager...">${collaborateur.notes || ""}</textarea>
       <div class="action-row">
-        <button class="button-link" type="submit">Enregistrer notes</button>
+        <button class="button-link button-primary" type="submit">Enregistrer notes</button>
       </div>
     </form>
   `;
@@ -158,17 +192,29 @@ function createItemList(items, renderLine, sectionKey) {
   `;
 }
 
-function renderFormationsSection(collaborateur) {
+function renderFormationsSection(collaborateur, uiState) {
   return `
     <section class="section-card stack">
-      <div class="section-title">Formations</div>
+      <div class="section-tools">
+        <div class="section-title">Formations</div>
+        <button type="button" class="button-link button-primary" id="toggle-add-formation">
+          ${uiState.showAddFormation ? "Fermer l'ajout" : "Ajouter une formation"}
+        </button>
+      </div>
       ${createItemList(
         collaborateur.formations,
         (item) =>
-          `<strong>${item.libelle || "Formation"}</strong><p class="muted">${labelize(item.statut)} - prevue: ${item.datePrevue || "-"} - realisee: ${item.dateRealisee || "-"} - echeance: ${item.echeance || "-"}</p><p class="muted">${item.commentaire || ""}</p>`,
+          `<strong>${item.libelle || "Formation"}</strong>
+          <div class="item-meta">
+            <span class="tag ${getStatusClass(item.statut)}">${labelize(item.statut)}</span>
+            <span class="date-chip">Prevue: ${item.datePrevue || "-"}</span>
+            <span class="date-chip">Realisee: ${item.dateRealisee || "-"}</span>
+            <span class="date-chip">Echeance: ${item.echeance || "-"}</span>
+          </div>
+          <p class="muted">${item.commentaire || ""}</p>`,
         "formation"
       )}
-      <form class="stack compact-form" id="add-formation-form">
+      <form class="stack compact-form" id="add-formation-form" ${uiState.showAddFormation ? "" : "hidden"}>
         <div class="form-grid">
           <label class="field">
             <span class="field-label">Libelle</span>
@@ -183,23 +229,37 @@ function renderFormationsSection(collaborateur) {
           <label class="field"><span class="field-label">Echeance</span><input class="input-search" name="echeance" type="date" /></label>
           <label class="field field-full"><span class="field-label">Commentaire</span><input class="input-search" name="commentaire" type="text" /></label>
         </div>
-        <div class="action-row"><button class="button-link" type="submit">Ajouter formation</button></div>
+        <div class="action-row">
+          <button class="button-link" type="button" id="cancel-add-formation">Annuler</button>
+          <button class="button-link button-primary" type="submit">Ajouter formation</button>
+        </div>
       </form>
     </section>
   `;
 }
 
-function renderEntretiensSection(collaborateur) {
+function renderEntretiensSection(collaborateur, uiState) {
   return `
     <section class="section-card stack">
-      <div class="section-title">Entretiens</div>
+      <div class="section-tools">
+        <div class="section-title">Entretiens</div>
+        <button type="button" class="button-link button-primary" id="toggle-add-entretien">
+          ${uiState.showAddEntretien ? "Fermer l'ajout" : "Ajouter un entretien"}
+        </button>
+      </div>
       ${createItemList(
         collaborateur.entretiens,
         (item) =>
-          `<strong>${labelize(item.type)}</strong><p class="muted">${labelize(item.statut)} - prevue: ${item.datePrevue || "-"} - realisee: ${item.dateRealisee || "-"}</p><p class="muted">${item.commentaire || ""}</p>`,
+          `<strong>${labelize(item.type)}</strong>
+          <div class="item-meta">
+            <span class="tag ${getStatusClass(item.statut)}">${labelize(item.statut)}</span>
+            <span class="date-chip">Prevue: ${item.datePrevue || "-"}</span>
+            <span class="date-chip">Realisee: ${item.dateRealisee || "-"}</span>
+          </div>
+          <p class="muted">${item.commentaire || ""}</p>`,
         "entretien"
       )}
-      <form class="stack compact-form" id="add-entretien-form">
+      <form class="stack compact-form" id="add-entretien-form" ${uiState.showAddEntretien ? "" : "hidden"}>
         <div class="form-grid">
           <label class="field"><span class="field-label">Type</span>${createSelect("type", ENTRETIEN_TYPES, "annuel")}</label>
           <label class="field"><span class="field-label">Date prevue</span><input class="input-search" name="datePrevue" type="date" /></label>
@@ -207,23 +267,37 @@ function renderEntretiensSection(collaborateur) {
           <label class="field"><span class="field-label">Statut</span>${createSelect("statut", ENTRETIEN_STATUTS, "a_prevoir")}</label>
           <label class="field field-full"><span class="field-label">Commentaire</span><input class="input-search" name="commentaire" type="text" /></label>
         </div>
-        <div class="action-row"><button class="button-link" type="submit">Ajouter entretien</button></div>
+        <div class="action-row">
+          <button class="button-link" type="button" id="cancel-add-entretien">Annuler</button>
+          <button class="button-link button-primary" type="submit">Ajouter entretien</button>
+        </div>
       </form>
     </section>
   `;
 }
 
-function renderRappelsSection(collaborateur) {
+function renderRappelsSection(collaborateur, uiState) {
   return `
     <section class="section-card stack">
-      <div class="section-title">Rappels manager</div>
+      <div class="section-tools">
+        <div class="section-title">Rappels manager</div>
+        <button type="button" class="button-link button-primary" id="toggle-add-rappel">
+          ${uiState.showAddRappel ? "Fermer l'ajout" : "Ajouter un rappel"}
+        </button>
+      </div>
       ${createItemList(
         collaborateur.rappelsManager,
         (item) =>
-          `<strong>${item.titre || "Rappel"}</strong><p class="muted">${labelize(item.priorite)} - ${labelize(item.statut)} - cible: ${item.dateCible || "-"}</p><p class="muted">${item.description || ""}</p>`,
+          `<strong>${item.titre || "Rappel"}</strong>
+          <div class="item-meta">
+            <span class="tag ${getPriorityClass(item.priorite)}">Priorite: ${labelize(item.priorite)}</span>
+            <span class="tag ${getStatusClass(item.statut)}">${labelize(item.statut)}</span>
+            <span class="date-chip">Date cible: ${item.dateCible || "-"}</span>
+          </div>
+          <p class="muted">${item.description || ""}</p>`,
         "rappel"
       )}
-      <form class="stack compact-form" id="add-rappel-form">
+      <form class="stack compact-form" id="add-rappel-form" ${uiState.showAddRappel ? "" : "hidden"}>
         <div class="form-grid">
           <label class="field"><span class="field-label">Titre</span><input class="input-search" name="titre" type="text" required /></label>
           <label class="field"><span class="field-label">Date cible</span><input class="input-search" name="dateCible" type="date" /></label>
@@ -231,7 +305,10 @@ function renderRappelsSection(collaborateur) {
           <label class="field"><span class="field-label">Statut</span>${createSelect("statut", RAPPEL_STATUTS, "a_faire")}</label>
           <label class="field field-full"><span class="field-label">Description</span><input class="input-search" name="description" type="text" /></label>
         </div>
-        <div class="action-row"><button class="button-link" type="submit">Ajouter rappel</button></div>
+        <div class="action-row">
+          <button class="button-link" type="button" id="cancel-add-rappel">Annuler</button>
+          <button class="button-link button-primary" type="submit">Ajouter rappel</button>
+        </div>
       </form>
     </section>
   `;
@@ -316,12 +393,39 @@ function bindMaterielAndNotes(container, collaborateur, handlers) {
   });
 }
 
-function bindCollectionActions(container, collaborateur, handlers) {
+function bindCollectionActions(container, collaborateur, uiState, handlers) {
+  container.querySelector("#toggle-add-formation")?.addEventListener("click", () => {
+    uiState.showAddFormation = !uiState.showAddFormation;
+    handlers.rerender();
+  });
+  container.querySelector("#toggle-add-entretien")?.addEventListener("click", () => {
+    uiState.showAddEntretien = !uiState.showAddEntretien;
+    handlers.rerender();
+  });
+  container.querySelector("#toggle-add-rappel")?.addEventListener("click", () => {
+    uiState.showAddRappel = !uiState.showAddRappel;
+    handlers.rerender();
+  });
+
+  container.querySelector("#cancel-add-formation")?.addEventListener("click", () => {
+    uiState.showAddFormation = false;
+    handlers.rerender();
+  });
+  container.querySelector("#cancel-add-entretien")?.addEventListener("click", () => {
+    uiState.showAddEntretien = false;
+    handlers.rerender();
+  });
+  container.querySelector("#cancel-add-rappel")?.addEventListener("click", () => {
+    uiState.showAddRappel = false;
+    handlers.rerender();
+  });
+
   const addFormationForm = container.querySelector("#add-formation-form");
   addFormationForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(addFormationForm).entries());
     try {
+      uiState.showAddFormation = false;
       handlers.onAddFormation(collaborateur.maia, payload);
       addFormationForm.reset();
     } catch (error) {
@@ -334,6 +438,7 @@ function bindCollectionActions(container, collaborateur, handlers) {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(addEntretienForm).entries());
     try {
+      uiState.showAddEntretien = false;
       handlers.onAddEntretien(collaborateur.maia, payload);
       addEntretienForm.reset();
     } catch (error) {
@@ -346,6 +451,7 @@ function bindCollectionActions(container, collaborateur, handlers) {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(addRappelForm).entries());
     try {
+      uiState.showAddRappel = false;
       handlers.onAddRappel(collaborateur.maia, payload);
       addRappelForm.reset();
     } catch (error) {
@@ -488,7 +594,7 @@ export function renderCollaborateurDetailView(container, options) {
     </div>
     <div class="action-row">
       <button class="button-link detail-back" type="button" id="back-list">Retour</button>
-      ${uiState.editIdentity ? "" : '<button class="button-link" type="button" id="toggle-edit-identity">Modifier</button>'}
+      ${uiState.editIdentity ? "" : '<button class="button-link button-primary" type="button" id="toggle-edit-identity">Modifier</button>'}
       <button class="button-link button-danger-soft" type="button" id="delete-collaborateur">Supprimer</button>
     </div>
   `;
@@ -503,9 +609,9 @@ export function renderCollaborateurDetailView(container, options) {
     </div>
     <div class="stack">
       ${renderMaterielSection(collaborateur)}
-      ${renderFormationsSection(collaborateur)}
-      ${renderEntretiensSection(collaborateur)}
-      ${renderRappelsSection(collaborateur)}
+      ${renderFormationsSection(collaborateur, uiState)}
+      ${renderEntretiensSection(collaborateur, uiState)}
+      ${renderRappelsSection(collaborateur, uiState)}
     </div>
   `;
 
@@ -521,7 +627,8 @@ export function renderCollaborateurDetailView(container, options) {
     onUpdateMateriel: options.onUpdateMateriel,
     onUpdateNotes: options.onUpdateNotes
   });
-  bindCollectionActions(container, collaborateur, {
+  bindCollectionActions(container, collaborateur, uiState, {
+    rerender: () => renderCollaborateurDetailView(container, options),
     onAddFormation: options.onAddFormation,
     onUpdateFormation: options.onUpdateFormation,
     onDeleteFormation: options.onDeleteFormation,
