@@ -1,19 +1,42 @@
 import { createKpiCard } from "../components/kpi-card.js";
 
 function getDashboardMetrics(state) {
+  const today = new Date().toISOString().slice(0, 10);
   const collaborateurs = state.collaborateurs;
-  const rappels = collaborateurs.reduce((total, item) => total + item.rappelsManager.filter((r) => !r.done).length, 0);
-  const formationsAprevoir = collaborateurs.reduce(
-    (total, item) => total + item.formations.filter((f) => f.status === "a_prevoir").length,
+
+  const rappelsAFaire = collaborateurs.reduce(
+    (total, item) =>
+      total + item.rappelsManager.filter((rappel) => rappel.statut === "a_faire" || rappel.statut === "en_cours").length,
     0
   );
-  const materielManquant = collaborateurs.filter((item) => !item.telephone || !item.tablette).length;
+
+  const formationsAprevoir = collaborateurs.reduce(
+    (total, item) => total + item.formations.filter((formation) => formation.statut === "a_prevoir").length,
+    0
+  );
+
+  const materielIncomplet = collaborateurs.filter(
+    (item) => !item.materiel?.telephone || !item.materiel?.tablette
+  ).length;
+
+  const entretiensAVenir = collaborateurs.reduce(
+    (total, item) =>
+      total +
+      item.entretiens.filter(
+        (entretien) =>
+          entretien.statut !== "realise" &&
+          entretien.datePrevue &&
+          entretien.datePrevue >= today
+      ).length,
+    0
+  );
 
   return {
     totalCollaborateurs: collaborateurs.length,
-    rappels,
+    rappelsAFaire,
     formationsAprevoir,
-    materielManquant
+    materielIncomplet,
+    entretiensAVenir
   };
 }
 
@@ -29,25 +52,30 @@ export function renderDashboardView(container, { state, onNavigate }) {
     createKpiCard({
       title: "Nombre de collaborateurs",
       value: metrics.totalCollaborateurs,
-      description: "Effectif total charge dans l'application"
+      description: "Effectif total suivi dans l'application"
     }),
     createKpiCard({
-      title: "Rappels en attente",
-      value: metrics.rappels,
-      description: "Actions manager non finalisees",
-      tone: metrics.rappels > 0 ? "warning" : "default"
+      title: "Rappels a faire",
+      value: metrics.rappelsAFaire,
+      description: "Rappels en cours ou a traiter",
+      tone: metrics.rappelsAFaire > 0 ? "warning" : "default"
     }),
     createKpiCard({
       title: "Formations a prevoir",
       value: metrics.formationsAprevoir,
-      description: "Demandes identifiees non programmees",
+      description: "Formations non planifiees",
       tone: metrics.formationsAprevoir > 0 ? "warning" : "default"
     }),
     createKpiCard({
-      title: "Materiel manquant",
-      value: metrics.materielManquant,
-      description: "Telephone ou tablette non renseignes",
-      tone: metrics.materielManquant > 0 ? "danger" : "default"
+      title: "Materiel incomplet",
+      value: metrics.materielIncomplet,
+      description: "Telephone ou tablette manquants",
+      tone: metrics.materielIncomplet > 0 ? "danger" : "default"
+    }),
+    createKpiCard({
+      title: "Entretiens a venir",
+      value: metrics.entretiensAVenir,
+      description: "Entretiens prevus non realises"
     })
   ];
 
@@ -58,7 +86,7 @@ export function renderDashboardView(container, { state, onNavigate }) {
   actions.innerHTML = `
     <div class="section-title">Acces rapides</div>
     <div class="row-between">
-      <p class="muted">Acceder au suivi collaborateur detaille.</p>
+      <p class="muted">Ouvrir la gestion des collaborateurs et leurs suivis.</p>
       <button type="button" class="button-link" id="goto-collaborateurs">Ouvrir les collaborateurs</button>
     </div>
   `;
