@@ -12,8 +12,8 @@ export function renderSidebar(container, { activeRoute, onNavigate, version }) {
   const brand = document.createElement("div");
   brand.className = "sidebar-brand";
   brand.innerHTML = `
-    <div class="sidebar-title">Manager PMRI - VLG</div>
-    <div class="sidebar-subtitle">Pilotage equipe GRDF</div>
+    <div class="sidebar-title">Manager-BDSN</div>
+    <div class="sidebar-subtitle">Pilotage équipe GRDF</div>
   `;
 
   const nav = document.createElement("nav");

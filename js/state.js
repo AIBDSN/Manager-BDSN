@@ -4,7 +4,7 @@ import { loadState, saveState } from "./storage.js";
 const listeners = new Set();
 
 const defaultState = {
-  version: "V2.0.0",
+  version: "V2.0.1",
   collaborateurs: TEAM_SEED.map(extendCollaborateur),
   ui: {
     searchTerm: ""
@@ -34,7 +34,7 @@ function hydrateState() {
   }
 
   return {
-    version: "V2.0.0",
+    version: "V2.0.1",
     collaborateurs: stored.collaborateurs.map(extendCollaborateur),
     ui: {
       searchTerm: stored.ui?.searchTerm || ""

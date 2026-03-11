@@ -27,8 +27,8 @@ function getTopbarConfig(route) {
   if (route.name === "collaborateur-detail") {
     const collaborateur = getCollaborateurByMaia(route.params.maia);
     return {
-      title: collaborateur ? collaborateur.salarie : "Fiche collaborateur",
-      subtitle: "Identite, materiel, formations, entretiens, rappels et notes"
+      title: "Fiche collaborateur",
+      subtitle: collaborateur ? `MAIA ${collaborateur.maia} - NNI ${collaborateur.nniSimplifie}` : "Acces detail collaborateur"
     };
   }
 

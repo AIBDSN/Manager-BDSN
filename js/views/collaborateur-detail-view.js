@@ -1,19 +1,36 @@
+function createInfoRow(label, value) {
+  return `
+    <div class="detail-item">
+      <strong>${label}</strong>
+      <span>${value}</span>
+    </div>
+  `;
+}
+
 function renderIdentitySection(collaborateur) {
   return `
     <div class="section-card">
       <div class="section-title">Identite</div>
       <div class="detail-list">
-        <div class="detail-item"><strong>Salarie</strong><span>${collaborateur.salarie}</span></div>
-        <div class="detail-item"><strong>MAIA</strong><span>${collaborateur.maia}</span></div>
-        <div class="detail-item"><strong>NNI simplifie</strong><span>${collaborateur.nniSimplifie}</span></div>
-        <div class="detail-item"><strong>Poste</strong><span>${collaborateur.poste}</span></div>
-        <div class="detail-item"><strong>Site</strong><span>${collaborateur.site}</span></div>
-        <div class="detail-item"><strong>Pole</strong><span>${collaborateur.pole}</span></div>
-        <div class="detail-item"><strong>Statut</strong><span>${collaborateur.statut}</span></div>
-        <div class="detail-item"><strong>Telephone</strong><span>${collaborateur.telephone || "Non renseigne"}</span></div>
-        <div class="detail-item"><strong>Tablette</strong><span>${collaborateur.tablette || "Non renseignee"}</span></div>
-        <div class="detail-item"><strong>Mail</strong><span>${collaborateur.mail}</span></div>
-        <div class="detail-item"><strong>Manager</strong><span>${collaborateur.manager}</span></div>
+        ${createInfoRow("Salarie", collaborateur.salarie)}
+        ${createInfoRow("Nom", collaborateur.nom)}
+        ${createInfoRow("Prenom", collaborateur.prenom)}
+        ${createInfoRow("MAIA", collaborateur.maia)}
+        ${createInfoRow("NNI simplifie", collaborateur.nniSimplifie)}
+        ${createInfoRow("Mail", collaborateur.mail)}
+        ${createInfoRow("Manager", collaborateur.manager)}
+      </div>
+    </div>
+  `;
+}
+
+function renderMaterielSection(collaborateur) {
+  return `
+    <div class="section-card">
+      <div class="section-title">Materiel</div>
+      <div class="detail-list">
+        ${createInfoRow("Telephone", collaborateur.telephone || "Non renseigne")}
+        ${createInfoRow("Tablette", collaborateur.tablette || "Non renseignee")}
       </div>
     </div>
   `;
@@ -27,6 +44,10 @@ function renderPlaceholderSection(title, items) {
       <ul class="placeholder-list">${listItems}</ul>
     </div>
   `;
+}
+
+function renderHeaderSubtitle(collaborateur) {
+  return `${collaborateur.poste} - ${collaborateur.pole} - ${collaborateur.site} - ${collaborateur.statut}`;
 }
 
 export function renderCollaborateurDetailView(container, { collaborateur, onBack }) {
@@ -48,14 +69,18 @@ export function renderCollaborateurDetailView(container, { collaborateur, onBack
   const wrapper = document.createElement("section");
   wrapper.className = "stack";
 
-  const head = document.createElement("div");
-  head.className = "row-between";
+  const head = document.createElement("header");
+  head.className = "section-card detail-header";
   head.innerHTML = `
-    <div>
-      <h2>${collaborateur.salarie}</h2>
-      <p class="muted">Fiche collaborateur - cle principale MAIA, cle secondaire NNI simplifie</p>
+    <div class="detail-header-main">
+      <h2 class="detail-title">${collaborateur.salarie}</h2>
+      <p class="detail-subtitle">${renderHeaderSubtitle(collaborateur)}</p>
+      <div class="detail-meta">
+        <span class="tag">MAIA ${collaborateur.maia}</span>
+        <span class="tag">NNI ${collaborateur.nniSimplifie}</span>
+      </div>
     </div>
-    <button class="button-link" type="button" id="back-list">Retour</button>
+    <button class="button-link detail-back" type="button" id="back-list">Retour</button>
   `;
   head.querySelector("#back-list")?.addEventListener("click", onBack);
 
@@ -67,9 +92,9 @@ export function renderCollaborateurDetailView(container, { collaborateur, onBack
       ${renderPlaceholderSection("Notes", ["Section prete pour les notes manager et suivis ponctuels."])}
     </div>
     <div class="stack">
-      ${renderPlaceholderSection("Materiel", ["Telephone", "Tablette", "Equipements additionnels"])}
+      ${renderMaterielSection(collaborateur)}
       ${renderPlaceholderSection("Formations", ["Planification", "Statut", "Echeances"])}
-      ${renderPlaceholderSection("Entretiens", ["Annuel", "Professionnel", "Points intermédiaires"])}
+      ${renderPlaceholderSection("Entretiens", ["Annuel", "Professionnel", "Points intermediaires"])}
       ${renderPlaceholderSection("Rappels manager", ["Relances prioritaires", "Actions a date"])}
     </div>
   `;

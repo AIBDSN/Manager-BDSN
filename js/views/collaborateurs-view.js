@@ -21,6 +21,22 @@ function filterRows(collaborateurs, term) {
   );
 }
 
+function renderSalarieCell(row) {
+  const cell = document.createElement("div");
+  cell.className = "salarie-cell";
+
+  const primary = document.createElement("div");
+  primary.className = "salarie-primary";
+  primary.textContent = row.salarie;
+
+  const secondary = document.createElement("div");
+  secondary.className = "salarie-secondary";
+  secondary.textContent = `${row.poste} - ${row.site}`;
+
+  cell.append(primary, secondary);
+  return cell;
+}
+
 export function renderCollaborateursView(container, { state, onSearchChange, onOpenDetail }) {
   container.innerHTML = "";
 
@@ -28,7 +44,7 @@ export function renderCollaborateursView(container, { state, onSearchChange, onO
   wrapper.className = "stack";
 
   const top = document.createElement("div");
-  top.className = "section-card stack";
+  top.className = "section-card stack search-panel";
 
   const row = document.createElement("div");
   row.className = "row-between";
@@ -43,7 +59,7 @@ export function renderCollaborateursView(container, { state, onSearchChange, onO
   const filteredRows = filterRows(state.collaborateurs, state.ui.searchTerm);
 
   const counter = document.createElement("span");
-  counter.className = "tag";
+  counter.className = "tag tag-soft";
   counter.textContent = `${filteredRows.length} resultat(s)`;
 
   row.append(search, counter);
@@ -57,7 +73,7 @@ export function renderCollaborateursView(container, { state, onSearchChange, onO
   const tableHost = document.createElement("div");
   renderTable(tableHost, {
     columns: [
-      { key: "salarie", label: "Salarie" },
+      { key: "salarie", label: "Collaborateur", render: renderSalarieCell },
       { key: "maia", label: "MAIA" },
       { key: "nniSimplifie", label: "NNI simplifie" },
       { key: "poste", label: "Poste" },

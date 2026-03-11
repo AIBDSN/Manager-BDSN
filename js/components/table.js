@@ -36,7 +36,11 @@ export function renderTable(container, { columns, rows, rowKey, emptyMessage = "
       columns.forEach((column) => {
         const td = document.createElement("td");
         const value = typeof column.render === "function" ? column.render(row) : row[column.key];
-        td.textContent = value ?? "";
+        if (value instanceof Node) {
+          td.appendChild(value);
+        } else {
+          td.textContent = value ?? "";
+        }
         tr.appendChild(td);
       });
 
